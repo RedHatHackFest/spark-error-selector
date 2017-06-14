@@ -1,11 +1,8 @@
-# spark-kafka-openshift-skeleton
+# spark-error-selector
 
-A Python source-to-image application skeleton for using Apache Spark and
-Kafka on OpenShift.
-
-This application will simply read messages from a Kafka topic, and
-the write those messages back out to a second topic. It will achieve this
-using Spark's streaming utilities for Kafka.
+This app will read messages from a kafka topic, select messages that match
+certain criteria (contain specific words), and write selected messages to
+another topic.
 
 ## usage on openshift
 
@@ -18,20 +15,14 @@ Spark clusters that are created by the
 utilities. Please see that documentation for more information about this
 process.
 
-This application also requires the deployment of a Kafka broker and something
-to emit messages to that broker. These topics are out of scope for this
-tutorial, but please see
-[this tutorial on radanalytics.io](https://radanalytics.io/applications/grafzahl)
-for some inspiration on prototyping this process.
-
 1. see the [radanalytics.io Get Started page](https://radanalytics.io/get-started)
    for instructions on installing that tooling
 
 1. launch the skeleton with the following command:
    ```bash
    oc new-app --template=oshinko-pyspark-build-dc \
-              -p APPLICATION_NAME=skeleton \
-              -p GIT_URI=https://github.com/elmiko/spark-kafka-openshift-skeleton \
+              -p APPLICATION_NAME=error-selector \
+              -p GIT_URI=https://github.com/redhathackfest/spark-error-selector \
               -p APP_ARGS='--servers=apache-kafka:9092 --in=topic1 --out=topic2'  \
               -p SPARK_OPTIONS='--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.1.0'
    ```
@@ -39,10 +30,3 @@ for some inspiration on prototyping this process.
 In this example, our application will subscribe to messages on the Kafka topic
 `topic1`, and it will publish messages on the topic `topic2` using the broker
 at `apache-kafka:9092`.
-
-## extending this project
-
-The source code of this application is documented to help new developers with
-a rapid start to building their own processing applications. Please see the
-`app.py` file for more documentation on modifying the behavior of this
-project.
