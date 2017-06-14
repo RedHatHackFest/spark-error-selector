@@ -1,15 +1,8 @@
-"""spark-kafka-openshift skeleton
+"""spark-error-selector
 
-This is a skeleton application for processing stream data from Apache
-Kafka with Apache Spark. It will read messages on an input topic and
-simply echo those message to the output topic.
-
-For an entry point to adding your own processing component, examine
-the `EchoStreamProcessor` class and its `configure_processing`
-function.
+This app will look for keywords in the messages from a kafka topic,
+and then take those messages and send them to another topic.
 """
-
-
 import argparse
 import os
 import re
@@ -20,18 +13,26 @@ from pyspark import streaming
 from pyspark.streaming import kafka as kstreaming
 
 
-class EchoStreamProcessor():
-    """A class to echo Kafka stream data
+class FilterStreamProcessor():
+    """A class to filter Kafka stream data
 
     This class wraps the Spark and Kafka specific logic for creating a
     DStream and applying processing functions to the RDDs contained
     therein.
 
-    It is meant as an example of how to configure a processor to read
-    from Kafka and write data back to Kafka. See the
-    `configure_processing` function for a place to add your custom
-    modifications.
+    If any message contains a word from the FILTER_LIST, those messages
+    will be copied to the output topic.
     """
+    FILTER_LIST = (
+        'ERROR',
+        'Error',
+        'error',
+        'WARN',
+        'warn',
+        'failed',
+        'failure',
+    )
+
     def __init__(self, input_topic, output_topic, servers, duration):
         """Create a new StreamProcessor
 
@@ -68,7 +69,8 @@ class EchoStreamProcessor():
             for r in rdd.collect():
                 try:
                     record = r.encode('ascii', 'backslashreplace')
-                    producer.send(self.output_topic, record)
+                    if any(word in record for word in self.FILTER_LIST):
+                        producer.send(self.output_topic, record)
                 except Exception as e:
                     print('Error sending collected RDD')
                     print('Original exception: {}'.format(e))
@@ -108,7 +110,7 @@ def main():
     parser.add_argument('--servers', help='the kafka brokers')
     args = parser.parse_args()
 
-    processor = EchoStreamProcessor(
+    processor = FilterStreamProcessor(
         input_topic = args.input_topic,
         output_topic = args.output_topic,
         servers = args.servers,
