@@ -76,7 +76,7 @@ class FilterStreamProcessor():
         messages = self.kafka_stream.map(lambda m: m[1])
         #totalcount = messages.count()
         filtermessages = messages.filter(
-            lambda r: any(word in r for word in self.FILTER_LIST))
+            lambda r: any(word in r for word in FilterStreamProcessor.FILTER_LIST))
         #filtercount = filtermessages.count()
         filtermessages.foreachRDD(send_filtered)
 
