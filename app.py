@@ -78,7 +78,15 @@ class FilterStreamProcessor():
         filtermessages = messages.filter(
             lambda r: any(word in r for word in FilterStreamProcessor.FILTER_LIST))
         #filtercount = filtermessages.count()
-        filtermessages.foreachRDD(send_filtered)
+        producer = kafka.KafkaProducer(bootstrap_servers=self.servers)
+        for r in filtermessages.collect():
+            try:
+                record = r.encode('ascii', 'backslashreplace')
+                producer.send(self.output_topic, record)
+            except Exception as e:
+                print('Error sending collected RDD')
+                print('Original exception: {}'.format(e))
+        producer.flush()
 
     def start_and_await_termination(self):
         """Start the stream processor
