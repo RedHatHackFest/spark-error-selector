@@ -45,7 +45,7 @@ class FilterStreamProcessor():
         self.output_topic = output_topic
         self.servers = servers
         self.spark_context = pyspark.SparkContext(
-            appName='spark-kafka-skeleton')
+            appName='spark-error-selector')
         self.streaming_context = streaming.StreamingContext(
             self.spark_context, duration)
         self.kafka_stream = kstreaming.KafkaUtils.createDirectStream(
