@@ -51,8 +51,7 @@ class FilterStreamProcessor():
         self.kafka_stream = kstreaming.KafkaUtils.createDirectStream(
             self.streaming_context,
             [self.input_topic],
-            {'bootstrap.servers': self.servers,
-             'auto.offset.reset': 'smallest'})
+            {'bootstrap.servers': self.servers})
 
     def configure_processing(self):
         """Configure the processing pipeline
