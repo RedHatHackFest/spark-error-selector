@@ -68,7 +68,7 @@ class FilterStreamProcessor():
                 try:
                     record = r.encode('ascii', 'backslashreplace')
                     if any(word in r for word in FilterStreamProcessor.FILTER_LIST):
-                    producer.send(self.output_topic, record)
+                        producer.send(self.output_topic, record)
                 except Exception as e:
                     print('Error sending collected RDD')
                     print('Original exception: {}'.format(e))
