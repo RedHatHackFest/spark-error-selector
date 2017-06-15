@@ -61,12 +61,13 @@ class FilterStreamProcessor():
         configuration that will affect how each RDD is processed.
         It will be called before the stream listener is started.
         """
-        producer = kafka.KafkaProducer(bootstrap_servers=self.servers)
         def send_filtered(rdd):
             """A function to publish an RDD to a Kafka topic"""
+            producer = kafka.KafkaProducer(bootstrap_servers=self.servers)
             for r in rdd.collect():
                 try:
                     record = r.encode('ascii', 'backslashreplace')
+                    if any(word in r for word in FilterStreamProcessor.FILTER_LIST):
                     producer.send(self.output_topic, record)
                 except Exception as e:
                     print('Error sending collected RDD')
@@ -74,11 +75,12 @@ class FilterStreamProcessor():
             producer.flush()
 
         messages = self.kafka_stream.map(lambda m: m[1])
+        messages.foreachRDD(send_filtered)
         #totalcount = messages.count()
-        filtermessages = messages.filter(
-            lambda r: any(word in r for word in FilterStreamProcessor.FILTER_LIST))
+        #filtermessages = messages.filter(
+        #    lambda r: any(word in r for word in FilterStreamProcessor.FILTER_LIST))
         #filtercount = filtermessages.count()
-        filtermessages.foreachRDD(send_filtered)
+        #filtermessages.foreachRDD(send_filtered)
 
     def start_and_await_termination(self):
         """Start the stream processor
