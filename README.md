@@ -23,10 +23,11 @@ process.
    oc new-app --template=oshinko-pyspark-build-dc \
               -p APPLICATION_NAME=error-selector \
               -p GIT_URI=https://github.com/redhathackfest/spark-error-selector \
-              -p APP_ARGS='--servers=apache-kafka:9092 --in=topic1 --out=topic2'  \
+              -p APP_ARGS='--servers=apache-kafka:9092 --in=topic1 --out=topic2 --count=topic3'  \
               -p SPARK_OPTIONS='--packages org.apache.spark:spark-streaming-kafka-0-8_2.11:2.1.0'
    ```
 
 In this example, our application will subscribe to messages on the Kafka topic
-`topic1`, and it will publish messages on the topic `topic2` using the broker
-at `apache-kafka:9092`.
+`topic1`, publish filtered messages on the topic `topic2`, and publish
+information about message counts on `topic3` using the broker at
+`apache-kafka:9092`.

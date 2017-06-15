@@ -4,6 +4,7 @@ This app will look for keywords in the messages from a kafka topic,
 and then take those messages and send them to another topic.
 """
 import argparse
+import json
 
 import kafka
 import pyspark
@@ -31,18 +32,20 @@ class FilterStreamProcessor():
         'failure',
     )
 
-    def __init__(self, input_topic, output_topic, servers, duration):
+    def __init__(self, input_topic, output_topic, count_topic, servers, duration):
         """Create a new StreamProcessor
 
         Keyword arguments:
         input_topic -- Kafka topic to read messages from
         output_topic -- Kafka topic to write message to
+        count_topic -- Kafka topic to write message counts to
         servers -- A list of Kafka brokers
         duration -- The window duration to sample the Kafka stream in
                     seconds
         """
         self.input_topic = input_topic
         self.output_topic = output_topic
+        self.count_topic = count_topic
         self.servers = servers
         self.spark_context = pyspark.SparkContext(
             appName='spark-error-selector')
@@ -65,14 +68,20 @@ class FilterStreamProcessor():
             producer = kafka.KafkaProducer(bootstrap_servers=self.servers)
             for r in rdd.collect():
                 try:
+                    totalcount.add(1)
                     record = r.encode('ascii', 'backslashreplace')
                     if any(word in record for word in FilterStreamProcessor.FILTER_LIST):
                         producer.send(self.output_topic, record)
+                        filtercount.add(1)
                 except Exception as e:
                     print('Error sending collected RDD')
                     print('Original exception: {}'.format(e))
+            counts = {'counts':{'total': totalcount.value, 'filter': filtercount.value}}
+            producer.send(self.count_topic, json.dumps(counts))
             producer.flush()
 
+        totalcount = self.spark_context.accumulator(0)
+        filtercount = self.spark_context.accumulator(0)
         messages = self.kafka_stream.map(lambda m: m[1])
         messages.foreachRDD(send_filtered)
         #totalcount = messages.count()
@@ -109,12 +118,15 @@ def main():
         help='the kafka topic to read data from')
     parser.add_argument('--out', dest='output_topic',
         help='the kafka topic to publish data to')
+    parser.add_argument('--count', dest='count_topic',
+        help='the kafka topic to publish count information to')
     parser.add_argument('--servers', help='the kafka brokers')
     args = parser.parse_args()
 
     processor = FilterStreamProcessor(
         input_topic = args.input_topic,
         output_topic = args.output_topic,
+        count_topic = args.count_topic,
         servers = args.servers,
         duration = 3)
 
