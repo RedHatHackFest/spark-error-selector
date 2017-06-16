@@ -69,6 +69,9 @@ class FilterStreamProcessor():
             for r in rdd.collect():
                 try:
                     totalcount.add(1)
+                    # this encode is helpful for strings that come in with
+                    # characters that mess up the kafka send, it could
+                    # be improved to handle unicode more efficiently.
                     record = r.encode('ascii', 'backslashreplace')
                     if any(word in record for word in FilterStreamProcessor.FILTER_LIST):
                         producer.send(self.output_topic, record)
@@ -84,11 +87,6 @@ class FilterStreamProcessor():
         filtercount = self.spark_context.accumulator(0)
         messages = self.kafka_stream.map(lambda m: m[1])
         messages.foreachRDD(send_filtered)
-        #totalcount = messages.count()
-        #filtermessages = messages.filter(
-        #    lambda r: any(word in r for word in FilterStreamProcessor.FILTER_LIST))
-        #filtercount = filtermessages.count()
-        #filtermessages.foreachRDD(send_filtered)
 
     def start_and_await_termination(self):
         """Start the stream processor
